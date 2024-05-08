@@ -1,0 +1,40 @@
+name: KICS scan and upload SARIF
+
+on:
+  pull_request:
+    branches:
+      - '*'
+  push:
+    branches:
+      - '*'
+
+jobs:
+  kics-job:
+    runs-on: ubuntu-latest
+    name: kics-github-action
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4.1.5
+      - name: create results directory
+        # make sure results dir is created
+        run: mkdir -p results
+      - name: Run KICS Scan with SARIF result
+        uses: checkmarx/kics-github-action@v2.0.0
+        with:
+          path: '.'
+          # when provided with a directory on output_path
+          # it will generate the specified reports file named 'results.{extension}'
+          output_path: results
+          platform_type: terraform
+          output_formats: 'json,sarif'
+          # exclude_paths: "terraform/gcp/big_data.tf,terraform/azure"
+          # seek query id in it's metadata.json
+          # exclude_queries: 0437633b-daa6-4bbc-8526-c0d2443b946e
+      - name: Show results
+        run: |
+          # cat results/results.sarif
+          cat results/results.json
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: results/results.sarif
